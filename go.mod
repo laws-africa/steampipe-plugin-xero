@@ -2,7 +2,10 @@ module github.com/laws-africa/steampipe-plugin-xero
 
 go 1.17
 
-require github.com/turbot/steampipe-plugin-sdk v1.8.2
+require (
+	github.com/turbot/steampipe-plugin-sdk v1.8.2
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+)
 
 require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
@@ -40,6 +43,7 @@ require (
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/sys v0.0.0-20211102061401-a2f17f7b995c // indirect
 	golang.org/x/text v0.3.5 // indirect
+	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.41.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
