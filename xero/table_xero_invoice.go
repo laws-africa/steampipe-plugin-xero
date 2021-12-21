@@ -51,14 +51,14 @@ func tableXeroInvoice(ctx context.Context) *plugin.Table {
 func listInvoices(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateData) (interface{}, error) {
 	client, err := connect(ctx, d)
 	if err != nil {
-		plugin.Logger(ctx).Error("xero.listInvoices", "connection_error", err)
+		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
 		return nil, err
 	}
 
 	// TODO: config
 	tenantId, err := getTenantId(ctx, "Laws.Africa")
 	if err != nil {
-		plugin.Logger(ctx).Error("xero.listInvoices", "getTenantId", err)
+		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func listInvoices(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateDat
 	resp, err := client.Do(req)
 
 	if err != nil {
-		plugin.Logger(ctx).Error("xero.listInvoices", "invoices", err)
+		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
 		return nil, err
 	}
 
@@ -79,7 +79,7 @@ func listInvoices(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateDat
 		response := Invoices{}
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			plugin.Logger(ctx).Error("xero.listInvoices", "unmarshal", err)
+			plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
 			return nil, err
 		}
 
@@ -87,7 +87,7 @@ func listInvoices(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateDat
 			d.StreamListItem(ctx, t)
 		}
 	} else {
-		plugin.Logger(ctx).Error("xero.listInvoices", "unmarshal", err)
+		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
 		return nil, fmt.Errorf("error querying xero api: %v", resp.Status)
 	}
 
