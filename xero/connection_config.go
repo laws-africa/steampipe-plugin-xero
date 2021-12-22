@@ -9,13 +9,10 @@ type xeroConfig struct {
 	ClientId     *string `cty:"client_id"`
 	ClientSecret *string `cty:"client_secret"`
 	TenantName   *string `cty:"tenant_name"`
-	BearerToken  *string `cty:"bearer_token"`
+	OauthCode    *string `cty:"oauth_code"`
 }
 
 var ConfigSchema = map[string]*schema.Attribute{
-	"bearer_token": {
-		Type: schema.TypeString,
-	},
 	"client_id": {
 		Type: schema.TypeString,
 	},
@@ -23,6 +20,9 @@ var ConfigSchema = map[string]*schema.Attribute{
 		Type: schema.TypeString,
 	},
 	"tenant_name": {
+		Type: schema.TypeString,
+	},
+	"oauth_code": {
 		Type: schema.TypeString,
 	},
 }
