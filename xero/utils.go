@@ -74,7 +74,6 @@ func (cli *XeroClient) EnsureFreshToken() error {
 			return err
 		}
 		if newToken.AccessToken != cli.Token.AccessToken {
-			// TODO: save the token
 			cli.Token = newToken
 			saveOauthToken(newToken)
 		}
