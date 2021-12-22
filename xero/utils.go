@@ -7,6 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/turbot/steampipe-plugin-sdk/plugin"
@@ -14,9 +17,11 @@ import (
 )
 
 type XeroClient struct {
-	TenantId string
-	Token    *oauth2.Token
-	Client   *http.Client
+	// path where the token will be saved
+	TokenPath string
+	TenantId  string
+	Token     *oauth2.Token
+	Client    *http.Client
 }
 
 type Connections []struct {
@@ -28,9 +33,6 @@ type Connections []struct {
 	CreatedDateUtc string `json:"createdDateUtc"`
 	UpdatedDateUtc string `json:"updatedDateUtc"`
 }
-
-// TODO: filename
-var oauthStateFilename = "oauth-state.json"
 
 // Store the tenant ID for the named organisation
 func (cli *XeroClient) StoreTenantId(tenantName string) error {
@@ -73,21 +75,21 @@ func (cli *XeroClient) EnsureFreshToken() error {
 		}
 		if newToken.AccessToken != cli.Token.AccessToken {
 			cli.Token = newToken
-			saveOauthToken(newToken)
+			saveOauthToken(newToken, cli.TokenPath)
 		}
 	}
 	return nil
 }
 
 // Save oauth token information to a file, for re-use later
-func saveOauthToken(token *oauth2.Token) error {
+func saveOauthToken(token *oauth2.Token, tokenPath string) error {
 	file, _ := json.MarshalIndent(token, "", " ")
-	return os.WriteFile(oauthStateFilename, file, 0644)
+	return os.WriteFile(tokenPath, file, 0644)
 }
 
 // Load oauth token information from file
-func loadOauthToken() (*oauth2.Token, error) {
-	file, err := os.ReadFile(oauthStateFilename)
+func loadOauthToken(tokenPath string) (*oauth2.Token, error) {
+	file, err := os.ReadFile(tokenPath)
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -114,6 +116,8 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	clientSecret := os.Getenv("XERO_CLIENT_SECRET")
 	tenantName := os.Getenv("XERO_TENANT_NAME")
 	code := os.Getenv("XERO_OAUTH_CODE")
+	tokenPath := "~/.steampipe/internal/xero-oauth-token.json"
+	redirectURL := ""
 
 	// get config from file
 	pluginConfig := GetConfig(d.Connection)
@@ -129,6 +133,13 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	if pluginConfig.OauthCode != nil {
 		code = *pluginConfig.OauthCode
 	}
+	if pluginConfig.RedirectURL != nil {
+		redirectURL = *pluginConfig.RedirectURL
+	}
+	if pluginConfig.OauthTokenPath != nil {
+		tokenPath = *pluginConfig.OauthTokenPath
+	}
+	tokenPath = resolvePath(tokenPath)
 
 	if clientId == "" {
 		return nil, fmt.Errorf("xero client_id must be specified")
@@ -136,11 +147,14 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	if clientSecret == "" {
 		return nil, fmt.Errorf("xero client_secret must be specified")
 	}
+	if redirectURL == "" {
+		return nil, fmt.Errorf("xero redirect_url must be specified")
+	}
 
 	oauthConfig := &oauth2.Config{
 		ClientID:     clientId,
 		ClientSecret: clientSecret,
-		RedirectURL:  "https://laws.africa/steampipe-plugin-xero/oauth-redirect.html",
+		RedirectURL:  redirectURL,
 		Scopes:       []string{"accounting.transactions.read", "offline_access"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://login.xero.com/identity/connect/authorize",
@@ -148,7 +162,7 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 		},
 	}
 
-	token, err := loadOauthToken()
+	token, err := loadOauthToken(tokenPath)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +181,15 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 			return nil, fmt.Errorf("error getting new oauth token (the oauth_code is probably old): %v. Visit %s to authenticate and get a new code", err, url)
 		}
 		plugin.Logger(ctx).Info("Received and saving new oauth token.")
-		saveOauthToken(token)
+		saveOauthToken(token, tokenPath)
 	} else {
 		plugin.Logger(ctx).Info("Using saved oauth token.")
 	}
 
 	client := &XeroClient{
-		Token:  token,
-		Client: oauthConfig.Client(ctx, token),
+		TokenPath: tokenPath,
+		Token:     token,
+		Client:    oauthConfig.Client(ctx, token),
 	}
 
 	// ensure the oauth tokens are still valid
@@ -182,7 +197,7 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	if err != nil {
 		// the oauth refresh token is probably out of date, throw it away, so that the next time
 		// we try to connect we start from scratch
-		os.Remove(oauthStateFilename)
+		os.Remove(tokenPath)
 		return client, err
 	}
 
@@ -196,4 +211,22 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	d.ConnectionManager.Cache.Set(cacheKey, client)
 
 	return client, nil
+}
+
+// Expand ~ and ~/ in path
+// See https://stackoverflow.com/questions/17609732/expand-tilde-to-home-directory/17617721
+func resolvePath(path string) string {
+	usr, _ := user.Current()
+	dir := usr.HomeDir
+
+	if path == "~" {
+		// In case of "~", which won't be caught by the "else if"
+		path = dir
+	} else if strings.HasPrefix(path, "~/") {
+		// Use strings.HasPrefix so we don't match paths like
+		// "/something/~/something/"
+		path = filepath.Join(dir, path[2:])
+	}
+
+	return path
 }

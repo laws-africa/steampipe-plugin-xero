@@ -6,10 +6,12 @@ import (
 )
 
 type xeroConfig struct {
-	ClientId     *string `cty:"client_id"`
-	ClientSecret *string `cty:"client_secret"`
-	TenantName   *string `cty:"tenant_name"`
-	OauthCode    *string `cty:"oauth_code"`
+	ClientId       *string `cty:"client_id"`
+	ClientSecret   *string `cty:"client_secret"`
+	TenantName     *string `cty:"tenant_name"`
+	OauthCode      *string `cty:"oauth_code"`
+	RedirectURL    *string `cty:"redirect_url"`
+	OauthTokenPath *string `cty:"oauth_token_path"`
 }
 
 var ConfigSchema = map[string]*schema.Attribute{
@@ -23,6 +25,12 @@ var ConfigSchema = map[string]*schema.Attribute{
 		Type: schema.TypeString,
 	},
 	"oauth_code": {
+		Type: schema.TypeString,
+	},
+	"redirect_url": {
+		Type: schema.TypeString,
+	},
+	"oauth_token_path": {
 		Type: schema.TypeString,
 	},
 }

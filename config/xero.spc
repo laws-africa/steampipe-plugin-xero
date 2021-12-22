@@ -13,4 +13,10 @@ connection "xero" {
   # The name of the Xero organisation (tenant) to fetch information for. If this is unspecified,
   # the first organisation provided by Xero is used.
   # tenant_name = "My Company"
+
+  # Redirect URL for the oauth flow
+  redirect_url = "https://laws.africa/steampipe-plugin-xero/oauth-redirect.html"
+
+  # path to store oauth token information
+  # oauth_token_path = "~/.steampipe/internal/xero-oauth-token.json"
 }
