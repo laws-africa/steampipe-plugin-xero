@@ -2,6 +2,8 @@
 
 This is a plugin for [steampipe.io](https://steampipe.io/) for reading the [Xero API](https://developer.xero.com/).
 
+Currently, it provides only a `xero_invoice` table which lists all Xero invoices.
+
 ## Configuration
 
 Specify configuration details either in the `~/.steampipe/config/xero.spc` file or using the appropriate environment variables.
