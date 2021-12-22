@@ -21,6 +21,7 @@ func tableXeroInvoice(ctx context.Context) *plugin.Table {
 			// KeyColumns: plugin.SingleColumn("invoice_id"),
 		},
 		Columns: []*plugin.Column{
+			{Name: "title", Type: proto.ColumnType_STRING, Transform: transform.FromField("InvoiceNumber")},
 			{Name: "type", Type: proto.ColumnType_STRING},
 			{Name: "invoice_id", Type: proto.ColumnType_STRING},
 			{Name: "invoice_number", Type: proto.ColumnType_STRING},
@@ -33,6 +34,7 @@ func tableXeroInvoice(ctx context.Context) *plugin.Table {
 			{Name: "is_discounted", Type: proto.ColumnType_BOOL},
 			{Name: "has_attachments", Type: proto.ColumnType_BOOL},
 			{Name: "has_errors", Type: proto.ColumnType_BOOL},
+			// TODO: parse dates
 			{Name: "date_string", Type: proto.ColumnType_STRING},
 			{Name: "due_date_string", Type: proto.ColumnType_STRING},
 			{Name: "status", Type: proto.ColumnType_STRING},
@@ -55,17 +57,10 @@ func listInvoices(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateDat
 		return nil, err
 	}
 
-	// TODO: config
-	tenantId, err := getTenantId(ctx, "Laws.Africa")
-	if err != nil {
-		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
-		return nil, err
-	}
-
 	url := "https://api.xero.com/api.xro/2.0/invoices"
 	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("xero-tenant-id", tenantId)
-	resp, err := client.Do(req)
+	req.Header.Add("xero-tenant-id", client.TenantId)
+	resp, err := client.Client.Do(req)
 
 	if err != nil {
 		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
