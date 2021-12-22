@@ -57,33 +57,42 @@ func listInvoices(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateDat
 		return nil, err
 	}
 
-	url := "https://api.xero.com/api.xro/2.0/invoices"
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("xero-tenant-id", client.TenantId)
-	resp, err := client.Client.Do(req)
+	// loop over each page
+	for page := 1; ; page++ {
+		plugin.Logger(ctx).Debug("fetching page", "page", page)
 
-	if err != nil {
-		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
-		return nil, err
-	}
-
-	if resp.StatusCode == 200 {
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-
-		response := Invoices{}
-		err = json.Unmarshal(body, &response)
+		url := fmt.Sprintf("https://api.xero.com/api.xro/2.0/invoices?page=%d", page)
+		req, _ := http.NewRequest("GET", url, nil)
+		req.Header.Add("xero-tenant-id", client.TenantId)
+		resp, err := client.Client.Do(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
 			return nil, err
 		}
 
-		for _, t := range response.Invoices {
-			d.StreamListItem(ctx, t)
+		if resp.StatusCode == 200 {
+			defer resp.Body.Close()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			response := Invoices{}
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
+				return nil, err
+			}
+
+			for _, t := range response.Invoices {
+				d.StreamListItem(ctx, t)
+			}
+
+			// if there aren't 100 items in this page, there are no more pages
+			if len(response.Invoices) != 100 {
+				break
+			}
+		} else {
+			plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
+			return nil, fmt.Errorf("error querying xero api: %v", resp.Status)
 		}
-	} else {
-		plugin.Logger(ctx).Error("xero.listInvoices", "err", err)
-		return nil, fmt.Errorf("error querying xero api: %v", resp.Status)
 	}
 
 	return nil, nil
