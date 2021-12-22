@@ -1,0 +1,19 @@
+<html>
+<head>
+</head>
+<body>
+  <p>Your steampipe Xero plugin oauth code is: <span class="code"></span></p>
+  <p>Put this code into <code>~/.steampipe/config/xero.spc</code> or set the <code>XERO_OAUTH_CODE</code> environment variable.</p>
+  <hr>
+  <p><code>oauth_code = "<span class="code"></span>"</p>
+  <p><code>XERO_OAUTH_CODE=<span class="code"></span></p>
+
+<script>
+var params = new URLSearchParams(location.search);
+for (el of document.querySelectorAll('.code')) {
+  el.innerText = params.get('code');
+}
+</script>
+
+</body>
+</html>
