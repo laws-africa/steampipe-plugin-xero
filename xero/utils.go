@@ -29,13 +29,11 @@ type Connections []struct {
 	UpdatedDateUtc string `json:"updatedDateUtc"`
 }
 
+// TODO: filename
+var oauthStateFilename = "oauth-state.json"
+
 // Store the tenant ID for the named organisation
 func (cli *XeroClient) StoreTenantId(tenantName string) error {
-	err := cli.EnsureFreshToken()
-	if err != nil {
-		return err
-	}
-
 	resp, err := cli.Client.Get("https://api.xero.com/connections")
 	if err != nil {
 		return err
@@ -84,14 +82,12 @@ func (cli *XeroClient) EnsureFreshToken() error {
 // Save oauth token information to a file, for re-use later
 func saveOauthToken(token *oauth2.Token) error {
 	file, _ := json.MarshalIndent(token, "", " ")
-	// TODO: filename
-	return os.WriteFile("oauth-state.json", file, 0644)
+	return os.WriteFile(oauthStateFilename, file, 0644)
 }
 
 // Load oauth token information from file
 func loadOauthToken() (*oauth2.Token, error) {
-	// TODO: filename
-	file, err := os.ReadFile("oauth-state.json")
+	file, err := os.ReadFile(oauthStateFilename)
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -152,22 +148,23 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 		},
 	}
 
-	if code == "" {
-		url := oauthConfig.AuthCodeURL("steampipe-plugin-xero", oauth2.AccessTypeOffline)
-		return nil, fmt.Errorf("xero oauth_code must be specified; visit %v to authenticate and get a code", url)
-	}
-
 	token, err := loadOauthToken()
 	if err != nil {
 		return nil, err
 	}
 
 	if token == nil {
+		url := oauthConfig.AuthCodeURL("steampipe-plugin-xero", oauth2.AccessTypeOffline)
+		if code == "" {
+			return nil, fmt.Errorf("xero oauth_code must be specified; visit %v to authenticate and get a code", url)
+		}
+
 		// do exchange to get a token since there is no existing token
 		plugin.Logger(ctx).Info("Getting new oauth token...")
 		token, err = oauthConfig.Exchange(ctx, code)
 		if err != nil {
-			return nil, err
+			// the oauth code is invalid
+			return nil, fmt.Errorf("error getting new oauth token (the oauth_code is probably old): %v. Visit %v to authenticate and get a new code", err, url)
 		}
 		plugin.Logger(ctx).Info("Received and saving new oauth token.")
 		saveOauthToken(token)
@@ -178,6 +175,15 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	client := &XeroClient{
 		Token:  token,
 		Client: oauthConfig.Client(ctx, token),
+	}
+
+	// ensure the oauth tokens are still valid
+	err = client.EnsureFreshToken()
+	if err != nil {
+		// the oauth refresh token is probably out of date, throw it away, so that the next time
+		// we try to connect we start from scratch
+		os.Remove(oauthStateFilename)
+		return client, err
 	}
 
 	// lookup and store the tenant id
