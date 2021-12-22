@@ -59,7 +59,7 @@ func (cli *XeroClient) StoreTenantId(tenantName string) error {
 		}
 	}
 
-	return fmt.Errorf("could not find organisation with name: %v", tenantName)
+	return fmt.Errorf("could not find organisation with name: %s", tenantName)
 }
 
 // Ensure that the http client has a fresh token
@@ -156,7 +156,7 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	if token == nil {
 		url := oauthConfig.AuthCodeURL("steampipe-plugin-xero", oauth2.AccessTypeOffline)
 		if code == "" {
-			return nil, fmt.Errorf("xero oauth_code must be specified; visit %v to authenticate and get a code", url)
+			return nil, fmt.Errorf("xero oauth_code must be specified; visit %s to authenticate and get a code", url)
 		}
 
 		// do exchange to get a token since there is no existing token
@@ -164,7 +164,7 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 		token, err = oauthConfig.Exchange(ctx, code)
 		if err != nil {
 			// the oauth code is invalid
-			return nil, fmt.Errorf("error getting new oauth token (the oauth_code is probably old): %v. Visit %v to authenticate and get a new code", err, url)
+			return nil, fmt.Errorf("error getting new oauth token (the oauth_code is probably old): %v. Visit %s to authenticate and get a new code", err, url)
 		}
 		plugin.Logger(ctx).Info("Received and saving new oauth token.")
 		saveOauthToken(token)
