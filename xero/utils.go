@@ -27,7 +27,7 @@ func connect(ctx context.Context, d *plugin.QueryData) (*XeroClient, error) {
 	tenantName := os.Getenv("XERO_TENANT_NAME")
 	code := os.Getenv("XERO_OAUTH_CODE")
 	tokenPath := "~/.steampipe/internal/xero-oauth-token.json"
-	redirectURL := ""
+	redirectURL := "https://laws.africa/steampipe-plugin-xero/oauth-redirect.html"
 
 	// get config from file
 	pluginConfig := GetConfig(d.Connection)
