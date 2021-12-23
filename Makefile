@@ -1,2 +1,2 @@
 install:
-	go build -o ~/.steampipe/plugins/hub.steampipe.io/plugins/laws-africa/xero@latest/steampipe-plugin-xero.plugin *.go
+	go build -o ~/.steampipe/plugins/local/xero/steampipe-plugin-xero.plugin *.go

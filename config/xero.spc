@@ -1,8 +1,8 @@
 connection "xero" {
-  plugin = "lawsafrica/xero"
+  plugin = "local/xero"
 
   # oauth client id
-  client_id = "116F90CBBCFB407D9645A4DBC376E52B"
+  # client_id = "12345"
 
   # oauth client secret
   # client_secret = "ABC123"
@@ -15,7 +15,7 @@ connection "xero" {
   # tenant_name = "My Company"
 
   # Redirect URL for the oauth flow
-  redirect_url = "https://laws.africa/steampipe-plugin-xero/oauth-redirect.html"
+  # redirect_url = "https://example.com/"
 
   # path to store oauth token information
   # oauth_token_path = "~/.steampipe/internal/xero-oauth-token.json"
