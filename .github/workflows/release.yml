@@ -15,3 +15,4 @@ jobs:
         goarch: amd64
         goversion: 1.17
         binary_name: steampipe-plugin-xero.plugin
+        extra_files: config/xero.spc
