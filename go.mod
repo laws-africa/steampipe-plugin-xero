@@ -46,7 +46,7 @@ require (
 	github.com/turbot/go-kit v0.3.0 // indirect
 	github.com/zclconf/go-cty v1.8.2 // indirect
 	golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0 // indirect
-	golang.org/x/sys v0.0.0-20211102061401-a2f17f7b995c // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20211013025323-ce878158c4d4 // indirect
